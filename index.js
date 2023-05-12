@@ -210,6 +210,7 @@ const run = async (
     return node;
   };
   let nodeData;
+  let setRootForNewNodes = "";
   if (root_relation_field && state[root_relation_field]) {
     const rootField = fields.find((f) => f.name === root_relation_field);
     const rootTable = Table.findOne({ name: rootField.reftable_name });
@@ -221,6 +222,10 @@ const run = async (
       topic: rootRow[rootField.attributes.summary_field],
       children: rows.filter((r) => !r[parent_field]).map(rowToData),
     };
+
+    setRootForNewNodes = `root_value:${JSON.stringify(
+      state[root_relation_field]
+    )}`;
   } else {
     const root = rows.find((r) => !r[parent_field]);
     nodeData = rowToData(root);
@@ -268,7 +273,7 @@ const run = async (
         view_post('${viewname}', 'delete_node', {id: operation.obj.id});
       if(operation.name=="finishEdit") {
         if(operation.origin == "new node") {
-          view_post('${viewname}', 'add_node', {topic: operation.obj.topic, parent_id: operation.obj.parent.id}, res=> {
+          view_post('${viewname}', 'add_node', {topic: operation.obj.topic, parent_id: operation.obj.parent.id, ${setRootForNewNodes}}, res=> {
             mind.reshapeNode(MindElixir.E(operation.obj.id), res.newNode)
             sc_mindmap_init_jq()
           });
@@ -332,8 +337,8 @@ const delete_node = async (
 const add_node = async (
   table_id,
   viewname,
-  { title_field, parent_field, edit_view },
-  { topic, parent_id },
+  { title_field, parent_field, edit_view, root_relation_field },
+  { topic, parent_id, root_value },
   { req }
 ) => {
   const table = await Table.findOne({ id: table_id });
@@ -345,14 +350,18 @@ const add_node = async (
   ) {
     return { json: { error: "not authorized" } };
   }
+  const newRow = { [title_field]: topic, [parent_field]: parent_id };
+  if (root_relation_field && root_value)
+    newRow[root_relation_field] = root_value;
   const id = await table.insertRow(
-    { [title_field]: topic, [parent_field]: parent_id },
+    newRow,
     req.user || { role_id: public_user_role }
   );
   const newNode = { id, topic };
   if (edit_view) {
     newNode.hyperLink = `javascript:ajax_modal('/view/${edit_view}?${table.pk_name}=${id}')`;
   }
+
   return { json: { success: "ok", newNode } };
 };
 
