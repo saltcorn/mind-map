@@ -66,7 +66,12 @@ const configuration_workflow = () =>
                 .forEach((f) => colour_options.push(`${field.name}.${f.name}`));
             }
           }
-
+          const edit_views = await View.find_table_views_where(
+            context.table_id,
+            ({ state_fields, viewtemplate, viewrow }) =>
+              viewrow.name !== context.viewname
+          );
+          const edit_view_opts = edit_views.map((v) => v.name);
           return new Form({
             fields: [
               {
@@ -100,6 +105,15 @@ const configuration_workflow = () =>
                   options: colour_options,
                 },
               },
+              {
+                name: "edit_view",
+                label: "Edit view",
+                type: "String",
+                required: false,
+                attributes: {
+                  options: edit_view_opts,
+                },
+              },
             ],
           });
         },
@@ -125,7 +139,7 @@ const mostOptions = {
 const run = async (
   table_id,
   viewname,
-  { title_field, parent_field, color_field },
+  { title_field, parent_field, color_field, edit_view },
   state,
   extraArgs
 ) => {
@@ -159,6 +173,11 @@ const run = async (
       if (color_field.includes(".")) {
         node.style = { background: row._color };
       } else node.style = { background: row[color_field] };
+    }
+    if (edit_view) {
+      node.hyperLink = `javascript:ajax_modal('/view/${edit_view}?${
+        table.pk_name
+      }=${row[table.pk_name]}')`;
     }
     return node;
   };
@@ -209,6 +228,7 @@ const run = async (
         view_post('${viewname}', 'change_title', {id: operation.obj.id, topic: operation.obj.topic});
       }
     })
+    $("#mindmap a.hyper-link").attr("target","").html("✎").css({border: "1px solid black", padding:"1px", "margin-left": "4px"})
     `)
     )
   );
