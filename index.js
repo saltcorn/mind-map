@@ -78,6 +78,17 @@ const configuration_workflow = () =>
                 showIf: { title_field: "Formula" },
               },
               {
+                name: "parent_field",
+                label: "Parent field",
+                type: "String",
+                required: true,
+                attributes: {
+                  options: fields
+                    .filter((f) => f.reftable_name === table.name)
+                    .map((f) => f.name),
+                },
+              },
+              {
                 name: "description_field",
                 label: "Description field",
                 type: "String",
@@ -113,10 +124,36 @@ const mostOptions = {
   allowUndo: false,
 };
 
-const run = async (table_id, viewname, { foo }, state, extraArgs) => {
+const run = async (
+  table_id,
+  viewname,
+  { title_field, title_formula, parent_field },
+  state,
+  extraArgs
+) => {
   const table = await Table.findOne({ id: table_id });
   const fields = await table.getFields();
   readState(state, fields);
+  const where = await stateFieldsToWhere({ fields, state, table });
+  const rows = await table.getJoinedRows({
+    where,
+  });
+
+  const root = rows.find((r) => !r[parent_field]);
+  const rowToData = (row) => {
+    const childRows = rows.filter(
+      (r) => r[parent_field] === row[table.pk_name]
+    );
+    return {
+      topic: row[title_field],
+      children: childRows.map(rowToData),
+    };
+  };
+  const mindData = {
+    nodeData: rowToData(root),
+    linkData: {},
+  };
+
   return div(
     div({ id: "mindmap" }),
     style(`
@@ -153,8 +190,7 @@ const run = async (table_id, viewname, { foo }, state, extraArgs) => {
     }
 
     let mind = new MindElixir(options)
-    const data = MindElixir.new('new topic')
-    mind.init(data)
+    mind.init(${JSON.stringify(mindData)})
     `)
     )
   );
