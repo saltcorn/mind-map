@@ -52,6 +52,20 @@ const configuration_workflow = () =>
         form: async (context) => {
           const table = await Table.findOne({ id: context.table_id });
           const fields = await table.getFields();
+          const colour_options = fields
+            .filter((f) => f.type.name === "Color")
+            .map((f) => f.name);
+          for (const field of fields) {
+            if (field.is_fkey) {
+              const reftable = Table.findOne({
+                name: field.reftable_name,
+              });
+              const reffields = await reftable.getFields();
+              reffields
+                .filter((f) => f.type.name === "Color")
+                .forEach((f) => colour_options.push(`${field.name}.${f.name}`));
+            }
+          }
 
           return new Form({
             fields: [
@@ -89,17 +103,11 @@ const configuration_workflow = () =>
                 },
               },
               {
-                name: "description_field",
-                label: "Description field",
+                name: "color_field",
+                label: "Color field",
                 type: "String",
-                sublabel: "Shown when the mouse hovers over the task",
                 attributes: {
-                  options: [
-                    ...fields
-                      .filter((f) => f.type.name === "String")
-                      .map((f) => f.name),
-                    "Formula",
-                  ],
+                  options: colour_options,
                 },
               },
             ],
@@ -127,7 +135,7 @@ const mostOptions = {
 const run = async (
   table_id,
   viewname,
-  { title_field, title_formula, parent_field },
+  { title_field, title_formula, parent_field, color_field },
   state,
   extraArgs
 ) => {
@@ -135,8 +143,16 @@ const run = async (
   const fields = await table.getFields();
   readState(state, fields);
   const where = await stateFieldsToWhere({ fields, state, table });
+  const joinFields = {};
+  if (color_field && color_field.includes(".")) {
+    joinFields[`_color`] = {
+      ref: color_field.split(".")[0],
+      target: color_field.split(".")[1],
+    };
+  }
   const rows = await table.getJoinedRows({
     where,
+    joinFields,
   });
 
   const root = rows.find((r) => !r[parent_field]);
@@ -144,10 +160,17 @@ const run = async (
     const childRows = rows.filter(
       (r) => r[parent_field] === row[table.pk_name]
     );
-    return {
+    const node = {
       topic: row[title_field],
+
       children: childRows.map(rowToData),
     };
+    if (color_field) {
+      if (color_field.includes(".")) {
+        node.style = { background: row._color };
+      } else node.style = { background: row[color_field] };
+    }
+    return node;
   };
   const mindData = {
     nodeData: rowToData(root),
