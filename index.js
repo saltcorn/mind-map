@@ -114,6 +114,15 @@ const configuration_workflow = () =>
                   options: edit_view_opts,
                 },
               },
+              {
+                name: "direction",
+                label: "Initial direction",
+                type: "String",
+                required: true,
+                attributes: {
+                  options: ["Side", "Left", "Right"],
+                },
+              },
             ],
           });
         },
@@ -139,7 +148,7 @@ const mostOptions = {
 const run = async (
   table_id,
   viewname,
-  { title_field, parent_field, color_field, edit_view },
+  { title_field, parent_field, color_field, edit_view, direction },
   state,
   extraArgs
 ) => {
@@ -197,7 +206,7 @@ const run = async (
       domReady(`
     let options = {
       ...${JSON.stringify(mostOptions)},
-      direction: MindElixir.SIDE,    
+      direction: MindElixir.${(direction || "Side").toUpperCase()},    
       contextMenuOption: {
         focus: true,
         extend: [
@@ -216,7 +225,7 @@ const run = async (
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
     mind.bus.addListener('operation', operation => {
-      console.log(operation)
+      //console.log(operation)
       if(operation.name=="moveNode") 
         view_post('${viewname}', 'change_node', {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.id});      
       if(operation.name=="removeNode") 
@@ -232,6 +241,7 @@ const run = async (
       }
     })
     sc_mindmap_init_jq()
+    $("#mindmap div.mind-elixir-toolbar.lt span").click(sc_mindmap_init_jq)
     `)
     )
   );
