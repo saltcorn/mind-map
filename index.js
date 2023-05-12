@@ -72,6 +72,9 @@ const configuration_workflow = () =>
               viewrow.name !== context.viewname
           );
           const edit_view_opts = edit_views.map((v) => v.name);
+          const root_rel_options = fields
+            .filter((f) => f.reftable_name && f.reftable_name !== table.name)
+            .map((f) => f.name);
           return new Form({
             fields: [
               {
@@ -123,6 +126,16 @@ const configuration_workflow = () =>
                   options: ["Side", "Left", "Right"],
                 },
               },
+              {
+                name: "root_relation_field",
+                label: "Root relation",
+                sublabel:
+                  "A relation that is the root of the map if found in state",
+                type: "String",
+                attributes: {
+                  options: root_rel_options,
+                },
+              },
             ],
           });
         },
@@ -148,7 +161,14 @@ const mostOptions = {
 const run = async (
   table_id,
   viewname,
-  { title_field, parent_field, color_field, edit_view, direction },
+  {
+    title_field,
+    parent_field,
+    color_field,
+    edit_view,
+    direction,
+    root_relation_field,
+  },
   state,
   extraArgs
 ) => {
@@ -168,7 +188,6 @@ const run = async (
     joinFields,
   });
 
-  const root = rows.find((r) => !r[parent_field]);
   const rowToData = (row) => {
     const childRows = rows.filter(
       (r) => r[parent_field] === row[table.pk_name]
@@ -190,8 +209,25 @@ const run = async (
     }
     return node;
   };
+  let nodeData;
+  if (root_relation_field && state[root_relation_field]) {
+    const rootField = fields.find((f) => f.name === root_relation_field);
+    const rootTable = Table.findOne({ name: rootField.reftable_name });
+    const rootRow = await rootTable.getRow({
+      [rootTable.pk_name]: state[root_relation_field],
+    });
+    nodeData = {
+      id: "root",
+      topic: rootRow[rootField.attributes.summary_field],
+      children: rows.filter((r) => !r[parent_field]).map(rowToData),
+    };
+  } else {
+    const root = rows.find((r) => !r[parent_field]);
+    nodeData = rowToData(root);
+  }
+
   const mindData = {
-    nodeData: rowToData(root),
+    nodeData,
     linkData: {},
   };
 
