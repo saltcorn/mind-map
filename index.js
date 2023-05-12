@@ -211,24 +211,26 @@ const run = async (
         ],
       }
     }
+    const sc_mindmap_init_jq = () =>
+      $("#mindmap a.hyper-link").attr("target","").html("✎").css({border: "1px solid black", "padding-left":"1px","padding-right":"1px", "margin-left": "4px"});
 
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
     mind.bus.addListener('operation', operation => {
-      console.log(operation)
+      //console.log(operation)
       if(operation.name=="removeNode") 
         view_post('${viewname}', 'delete_node', {id: operation.obj.id});
       if(operation.name=="finishEdit") {
         if(operation.origin == "new node") {
           view_post('${viewname}', 'add_node', {topic: operation.obj.topic, parent_id: operation.obj.parent.id}, res=> {
-            console.log("res", res)
-            mind.reshapeNode(operation.obj, res.newNode)
+            mind.reshapeNode(MindElixir.E(operation.obj.id), res.newNode)
+            sc_mindmap_init_jq()
           });
         } else 
           view_post('${viewname}', 'change_title', {id: operation.obj.id, topic: operation.obj.topic});
       }
     })
-    $("#mindmap a.hyper-link").attr("target","").html("✎").css({border: "1px solid black", "padding-left":"1px","padding-right":"1px", "margin-left": "4px"})
+    sc_mindmap_init_jq()
     `)
     )
   );
