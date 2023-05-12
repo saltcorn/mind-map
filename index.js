@@ -228,7 +228,7 @@ const run = async (
         view_post('${viewname}', 'change_title', {id: operation.obj.id, topic: operation.obj.topic});
       }
     })
-    $("#mindmap a.hyper-link").attr("target","").html("✎").css({border: "1px solid black", padding:"1px", "margin-left": "4px"})
+    $("#mindmap a.hyper-link").attr("target","").html("✎").css({border: "1px solid black", "padding-left":"1px","padding-right":"1px", "margin-left": "4px"})
     `)
     )
   );
