@@ -217,7 +217,9 @@ const run = async (
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
     mind.bus.addListener('operation', operation => {
-      //console.log(operation)
+      console.log(operation)
+      if(operation.name=="moveNode") 
+        view_post('${viewname}', 'change_node', {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.id});      
       if(operation.name=="removeNode") 
         view_post('${viewname}', 'delete_node', {id: operation.obj.id});
       if(operation.name=="finishEdit") {
@@ -227,7 +229,7 @@ const run = async (
             sc_mindmap_init_jq()
           });
         } else 
-          view_post('${viewname}', 'change_title', {id: operation.obj.id, topic: operation.obj.topic});
+          view_post('${viewname}', 'change_node', {id: operation.obj.id, topic: operation.obj.topic});
       }
     })
     sc_mindmap_init_jq()
@@ -236,21 +238,11 @@ const run = async (
   );
 };
 
-/*  before: {
-        insertSibling(el, obj) {
-          return true
-        },
-        async addChild(el, obj) {
-          await sleep()
-          return true
-        },
-      },
-      */
-const change_title = async (
+const change_node = async (
   table_id,
   viewname,
-  { title_field },
-  { id, topic },
+  { title_field, parent_field },
+  { id, topic, parent_id },
   { req }
 ) => {
   const table = await Table.findOne({ id: table_id });
@@ -262,11 +254,10 @@ const change_title = async (
   ) {
     return { json: { error: "not authorized" } };
   }
-  await table.updateRow(
-    { [title_field]: topic },
-    id,
-    req.user || { role_id: public_user_role }
-  );
+  const updRow = {};
+  if (topic) updRow[title_field] = topic;
+  if (parent_id) updRow[parent_field] = parent_id;
+  await table.updateRow(updRow, id, req.user || { role_id: public_user_role });
   return { json: { success: "ok" } };
 };
 
@@ -332,7 +323,7 @@ module.exports = {
       get_state_fields,
       configuration_workflow,
       run,
-      routes: { change_title, add_node, delete_node },
+      routes: { change_node, add_node, delete_node },
     },
   ],
 };
