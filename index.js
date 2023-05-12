@@ -76,20 +76,10 @@ const configuration_workflow = () =>
                 sublabel: "Event label displayed on the task.",
                 required: true,
                 attributes: {
-                  options: [
-                    ...fields
-                      .filter((f) => f.type.name === "String")
-                      .map((f) => f.name),
-                    "Formula",
-                  ],
+                  options: fields
+                    .filter((f) => f.type.name === "String")
+                    .map((f) => f.name),
                 },
-              },
-              {
-                name: "title_formula",
-                label: "Title formula",
-                class: "validate-expression",
-                type: "String",
-                showIf: { title_field: "Formula" },
               },
               {
                 name: "parent_field",
@@ -135,7 +125,7 @@ const mostOptions = {
 const run = async (
   table_id,
   viewname,
-  { title_field, title_formula, parent_field, color_field },
+  { title_field, parent_field, color_field },
   state,
   extraArgs
 ) => {
@@ -162,7 +152,7 @@ const run = async (
     );
     const node = {
       topic: row[title_field],
-
+      id: row[table.pk_name],
       children: childRows.map(rowToData),
     };
     if (color_field) {
@@ -214,9 +204,38 @@ const run = async (
 
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
+    mind.bus.addListener('operation', operation => {
+      if(operation.name=="finishEdit") {
+        view_post('${viewname}', 'change_title', {id: operation.obj.id, topic: operation.obj.topic});
+      }
+    })
     `)
     )
   );
+};
+
+const change_title = async (
+  table_id,
+  viewname,
+  { title_field },
+  { id, topic },
+  { req }
+) => {
+  const table = await Table.findOne({ id: table_id });
+
+  const role = req.isAuthenticated() ? req.user.role_id : public_user_role;
+  if (
+    role > table.min_role_write &&
+    !(table.ownership_field || table.ownership_formula)
+  ) {
+    return { json: { error: "not authorized" } };
+  }
+  await table.updateRow(
+    { [title_field]: topic },
+    id,
+    req.user || { role_id: public_user_role }
+  );
+  return { json: { success: "ok" } };
 };
 
 module.exports = {
@@ -231,7 +250,7 @@ module.exports = {
       get_state_fields,
       configuration_workflow,
       run,
-      routes: {},
+      routes: { change_title },
     },
   ],
 };
