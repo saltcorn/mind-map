@@ -200,14 +200,13 @@ const run = async (
       direction: MindElixir.SIDE,    
       contextMenuOption: {
         focus: true,
-        link: true,
         extend: [
-          {
+          /*{
             name: "Node edit",
             onclick: () => {
               alert("extend menu");
             },
-          },
+          },*/
         ],
       }
     }
