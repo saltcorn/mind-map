@@ -197,7 +197,7 @@ const run = async (
       domReady(`
     let options = {
       ...${JSON.stringify(mostOptions)},
-      direction: MindElixir.LEFT,    
+      direction: MindElixir.SIDE,    
       contextMenuOption: {
         focus: true,
         link: true,
@@ -209,23 +209,23 @@ const run = async (
             },
           },
         ],
-      }, 
-      before: {
-        insertSibling(el, obj) {
-          return true
-        },
-        async addChild(el, obj) {
-          await sleep()
-          return true
-        },
-      },
+      }
     }
 
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
     mind.bus.addListener('operation', operation => {
+      console.log(operation)
+      if(operation.name=="removeNode") 
+        view_post('${viewname}', 'delete_node', {id: operation.obj.id});
       if(operation.name=="finishEdit") {
-        view_post('${viewname}', 'change_title', {id: operation.obj.id, topic: operation.obj.topic});
+        if(operation.origin == "new node") {
+          view_post('${viewname}', 'add_node', {topic: operation.obj.topic, parent_id: operation.obj.parent.id}, res=> {
+            console.log("res", res)
+            mind.reshapeNode(operation.obj, res.newNode)
+          });
+        } else 
+          view_post('${viewname}', 'change_title', {id: operation.obj.id, topic: operation.obj.topic});
       }
     })
     $("#mindmap a.hyper-link").attr("target","").html("✎").css({border: "1px solid black", "padding-left":"1px","padding-right":"1px", "margin-left": "4px"})
@@ -234,6 +234,16 @@ const run = async (
   );
 };
 
+/*  before: {
+        insertSibling(el, obj) {
+          return true
+        },
+        async addChild(el, obj) {
+          await sleep()
+          return true
+        },
+      },
+      */
 const change_title = async (
   table_id,
   viewname,
@@ -258,6 +268,56 @@ const change_title = async (
   return { json: { success: "ok" } };
 };
 
+const delete_node = async (
+  table_id,
+  viewname,
+  { title_field },
+  { id },
+  { req }
+) => {
+  const table = await Table.findOne({ id: table_id });
+
+  const role = req.isAuthenticated() ? req.user.role_id : public_user_role;
+  if (
+    role > table.min_role_write &&
+    !(table.ownership_field || table.ownership_formula)
+  ) {
+    return { json: { error: "not authorized" } };
+  }
+  await table.deleteRows(
+    { [table.pk_name]: id },
+    req.user || { role_id: public_user_role }
+  );
+  return { json: { success: "ok" } };
+};
+
+const add_node = async (
+  table_id,
+  viewname,
+  { title_field, parent_field, edit_view },
+  { topic, parent_id },
+  { req }
+) => {
+  const table = await Table.findOne({ id: table_id });
+
+  const role = req.isAuthenticated() ? req.user.role_id : public_user_role;
+  if (
+    role > table.min_role_write &&
+    !(table.ownership_field || table.ownership_formula)
+  ) {
+    return { json: { error: "not authorized" } };
+  }
+  const id = await table.insertRow(
+    { [title_field]: topic, [parent_field]: parent_id },
+    req.user || { role_id: public_user_role }
+  );
+  const newNode = { id, topic };
+  if (edit_view) {
+    newNode.hyperLink = `javascript:ajax_modal('/view/${edit_view}?${table.pk_name}=${id}')`;
+  }
+  return { json: { success: "ok", newNode } };
+};
+
 module.exports = {
   sc_plugin_api_version: 1,
   headers,
@@ -270,7 +330,7 @@ module.exports = {
       get_state_fields,
       configuration_workflow,
       run,
-      routes: { change_title },
+      routes: { change_title, add_node, delete_node },
     },
   ],
 };
