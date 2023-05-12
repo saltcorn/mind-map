@@ -211,7 +211,7 @@ const run = async (
       }
     }
     const sc_mindmap_init_jq = () =>
-      $("#mindmap a.hyper-link").attr("target","").html("✎").css({border: "1px solid black", "padding-left":"1px","padding-right":"1px", "margin-left": "4px"});
+      $("#mindmap a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-edit"></i>');
 
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
