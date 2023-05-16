@@ -350,7 +350,10 @@ const add_node = async (
   ) {
     return { json: { error: "not authorized" } };
   }
-  const newRow = { [title_field]: topic, [parent_field]: parent_id };
+  const newRow = {
+    [title_field]: topic,
+    [parent_field]: parent_id === "root" ? null : parent_id,
+  };
   if (root_relation_field && root_value)
     newRow[root_relation_field] = root_value;
   const id = await table.insertRow(
