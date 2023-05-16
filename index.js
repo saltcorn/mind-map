@@ -309,6 +309,16 @@ const run = async (
           if (!node.icons) node.icons = [];
           node.icons.push(anno.icon);
           break;
+        case "Text badge":
+          if (!node.tags) node.tags = [];
+          node.tags.push(anno.text);
+          break;
+        case "Formula badge":
+          if (!node.tags) node.tags = [];
+          node.tags.push(
+            eval_expression(anno.formula, row, extraArgs.req.user)
+          );
+          break;
 
         default:
           break;
