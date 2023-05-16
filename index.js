@@ -298,7 +298,7 @@ const run = async (
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
     mind.bus.addListener('operation', operation => {
-      //console.log(operation)
+      console.log(operation)
       if(operation.name=="moveNode") 
         view_post('${viewname}', 'change_node', {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.id});      
       if(operation.name=="removeNode") 
@@ -313,6 +313,8 @@ const run = async (
           view_post('${viewname}', 'change_node', {id: operation.obj.id, topic: operation.obj.topic});
       }
     })
+    $("li#cm-fucus").click(()=>setTimeout(sc_mindmap_init_jq))
+    $("li#cm-unfucus").click(()=>setTimeout(sc_mindmap_init_jq))
     sc_mindmap_init_jq()
     $("#mindmap div.mind-elixir-toolbar.lt span").click(sc_mindmap_init_jq)
     `)
