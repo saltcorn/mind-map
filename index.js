@@ -5,6 +5,8 @@ const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
 const View = require("@saltcorn/data/models/view");
 const Workflow = require("@saltcorn/data/models/workflow");
+const { runInNewContext } = require("vm");
+
 const {
   stateFieldsToWhere,
   readState,
@@ -22,7 +24,7 @@ const {
   i,
 } = require("@saltcorn/markup/tags");
 
-const { features } = require("@saltcorn/data/db/state");
+const { features, getState } = require("@saltcorn/data/db/state");
 const public_user_role = features?.public_user_role || 10;
 
 const headers = [
@@ -135,6 +137,14 @@ const configuration_workflow = () =>
                 attributes: {
                   options: root_rel_options,
                 },
+              },
+              {
+                name: "field_values_formula",
+                label: "Row values formula",
+                sublabel:
+                  "A formula for field values set when creating a new node. Use <code>parent</code> for parent row. For example <code>{project: parent.project}</code>",
+                type: "String",
+                fieldview: "textarea",
               },
             ],
           });
@@ -337,7 +347,13 @@ const delete_node = async (
 const add_node = async (
   table_id,
   viewname,
-  { title_field, parent_field, edit_view, root_relation_field },
+  {
+    title_field,
+    parent_field,
+    edit_view,
+    root_relation_field,
+    field_values_formula,
+  },
   { topic, parent_id, root_value },
   { req }
 ) => {
@@ -350,11 +366,26 @@ const add_node = async (
   ) {
     return { json: { error: "not authorized" } };
   }
+
+  const parent_id_val = parent_id === "root" ? null : parent_id;
+  let newRowValues = {};
+  if (field_values_formula) {
+    const ctx = getState().function_context;
+    if (parent_id_val) {
+      ctx.parent = await table.getRow({ [table.pk_name]: parent_id_val });
+    }
+    newRowValues = runInNewContext(`()=>(${field_values_formula})`, ctx)();
+  }
   const newRow = {
+    ...newRowValues,
     [title_field]: topic,
-    [parent_field]: parent_id === "root" ? null : parent_id,
+    [parent_field]: parent_id_val,
   };
-  if (root_relation_field && root_value)
+  if (
+    root_relation_field &&
+    root_value &&
+    typeof newRow[root_relation_field] === "undefined"
+  )
     newRow[root_relation_field] = root_value;
   const id = await table.insertRow(
     newRow,
