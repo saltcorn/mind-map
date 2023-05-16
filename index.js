@@ -4,7 +4,10 @@ const Field = require("@saltcorn/data/models/field");
 const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
 const View = require("@saltcorn/data/models/view");
+const { eval_expression } = require("@saltcorn/data/models/expression");
 const Workflow = require("@saltcorn/data/models/workflow");
+const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
+
 const { runInNewContext } = require("vm");
 
 const {
@@ -53,7 +56,7 @@ const configuration_workflow = () =>
         name: "Views and fields",
         form: async (context) => {
           const table = await Table.findOne({ id: context.table_id });
-          const fields = await table.getFields();
+          const fields = table.fields;
           const colour_options = fields
             .filter((f) => f.type.name === "Color")
             .map((f) => f.name);
@@ -166,6 +169,64 @@ const configuration_workflow = () =>
           });
         },
       },
+      {
+        name: "Annotations",
+        form: async (context) => {
+          return new Form({
+            fields: [
+              new FieldRepeat({
+                name: "annotations",
+                fields: [
+                  {
+                    name: "anno_type",
+                    label: "Type",
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      options: [
+                        "Icon",
+                        "Text badge",
+                        "Formula badge",
+                        //"Aggregation Badge",
+                      ],
+                    },
+                  },
+                  {
+                    name: "icon",
+                    label: "Icon",
+                    sublabel: "Paste a unicode icon.",
+                    type: "String",
+                    showIf: { anno_type: "Icon" },
+                  },
+                  {
+                    name: "text",
+                    label: "Text",
+                    sublabel: "Text to show in badge",
+                    type: "String",
+                    showIf: { anno_type: "Text badge" },
+                  },
+                  {
+                    name: "formula",
+                    label: "Text formula",
+                    sublabel: "Formula for text to show in badge",
+                    type: "String",
+                    showIf: { anno_type: "Formula badge" },
+                  },
+                  {
+                    name: "display_if",
+                    label: "Show if",
+                    sublabel: "Formula for when to display",
+                    type: "String",
+                    showIf: {
+                      anno_type: ["Icon", "Text badge", "Formula badge"],
+                    },
+                  },
+                ],
+              }),
+            ],
+          });
+        },
+      },
     ],
   });
 
@@ -196,10 +257,12 @@ const run = async (
     root_relation_field,
     view_height,
     view_height_units,
+    annotations,
   },
   state,
   extraArgs
 ) => {
+  console.log(annotations);
   const table = await Table.findOne({ id: table_id });
   const fields = await table.getFields();
   readState(state, fields);
@@ -235,6 +298,22 @@ const run = async (
         table.pk_name
       }=${row[table.pk_name]}')`;
     }
+    (annotations || []).forEach((anno) => {
+      if (
+        anno.display_if &&
+        !eval_expression(anno.display_if, row, extraArgs.req.user)
+      )
+        return;
+      switch (anno.anno_type) {
+        case "Icon":
+          if (!node.icons) node.icons = [];
+          node.icons.push(anno.icon);
+          break;
+
+        default:
+          break;
+      }
+    });
     return node;
   };
   let nodeData;
