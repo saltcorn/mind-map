@@ -13,6 +13,7 @@ const { runInNewContext } = require("vm");
 const {
   stateFieldsToWhere,
   readState,
+  picked_fields_to_query,
 } = require("@saltcorn/data/plugin-helper");
 
 const {
@@ -28,6 +29,7 @@ const {
 } = require("@saltcorn/markup/tags");
 
 const { features, getState } = require("@saltcorn/data/db/state");
+const db = require("@saltcorn/data/db");
 const public_user_role = features?.public_user_role || 10;
 
 const headers = [
@@ -172,13 +174,58 @@ const configuration_workflow = () =>
       {
         name: "Annotations",
         form: async (context) => {
+          const table = await Table.findOne({ id: context.table_id });
+
+          const { child_field_list, child_relations } =
+            await table.get_child_relations(true);
+          const aggStatOptions = {};
+
+          const agg_field_opts = child_relations.map(
+            ({ table, key_field, through }) => {
+              const aggKey =
+                (through ? `${through.name}->` : "") +
+                `${table.name}.${key_field.name}`;
+              aggStatOptions[aggKey] = [
+                "Count",
+                "Avg",
+                "Sum",
+                "Max",
+                "Min",
+                "Array_Agg",
+              ];
+              table.fields.forEach((f) => {
+                if (f.type && f.type.name === "Date") {
+                  aggStatOptions[aggKey].push(`Latest ${f.name}`);
+                  aggStatOptions[aggKey].push(`Earliest ${f.name}`);
+                }
+              });
+              return {
+                name: `agg_field`,
+                label: "On Field",
+                type: "String",
+                required: true,
+                attributes: {
+                  options: table.fields
+                    .filter((f) => !f.calculated || f.stored)
+                    .map((f) => ({
+                      label: f.name,
+                      name: `${f.name}@${f.type_name}`,
+                    })),
+                },
+                showIf: {
+                  agg_relation: aggKey,
+                  type: "Aggregation",
+                },
+              };
+            }
+          );
           return new Form({
             fields: [
               new FieldRepeat({
                 name: "annotations",
                 fields: [
                   {
-                    name: "anno_type",
+                    name: "type",
                     label: "Type",
                     type: "String",
                     required: true,
@@ -187,7 +234,7 @@ const configuration_workflow = () =>
                         "Icon",
                         "Text badge",
                         "Formula badge",
-                        //"Aggregation Badge",
+                        "Aggregation",
                       ],
                     },
                   },
@@ -196,21 +243,21 @@ const configuration_workflow = () =>
                     label: "Icon",
                     sublabel: "Paste a unicode icon.",
                     type: "String",
-                    showIf: { anno_type: "Icon" },
+                    showIf: { type: "Icon" },
                   },
                   {
                     name: "text",
                     label: "Text",
                     sublabel: "Text to show in badge",
                     type: "String",
-                    showIf: { anno_type: "Text badge" },
+                    showIf: { type: "Text badge" },
                   },
                   {
                     name: "formula",
                     label: "Text formula",
                     sublabel: "Formula for text to show in badge",
                     type: "String",
-                    showIf: { anno_type: "Formula badge" },
+                    showIf: { type: "Formula badge" },
                   },
                   {
                     name: "display_if",
@@ -218,8 +265,39 @@ const configuration_workflow = () =>
                     sublabel: "Formula for when to display",
                     type: "String",
                     showIf: {
-                      anno_type: ["Icon", "Text badge", "Formula badge"],
+                      type: ["Icon", "Text badge", "Formula badge"],
                     },
+                  },
+                  {
+                    name: "agg_relation",
+                    label: "Relation",
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      options: child_field_list,
+                    },
+                    showIf: { type: "Aggregation" },
+                  },
+                  {
+                    name: "stat",
+                    label: "Statistic",
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      calcOptions: ["agg_relation", aggStatOptions],
+                    },
+
+                    showIf: { type: "Aggregation" },
+                  },
+                  ...agg_field_opts,
+                  {
+                    name: "aggwhere",
+                    label: "Where",
+                    sublabel: "Formula",
+                    class: "validate-expression",
+                    type: "String",
+                    required: false,
+                    showIf: { type: "Aggregation" },
                   },
                 ],
               }),
@@ -262,12 +340,16 @@ const run = async (
   state,
   extraArgs
 ) => {
-  console.log(annotations);
   const table = await Table.findOne({ id: table_id });
-  const fields = await table.getFields();
+  const fields = table.fields;
   readState(state, fields);
   const where = await stateFieldsToWhere({ fields, state, table });
   const joinFields = {};
+  const { aggregations } = picked_fields_to_query(
+    annotations || [],
+    fields,
+    {}
+  );
   if (color_field && color_field.includes(".")) {
     joinFields[`_color`] = {
       ref: color_field.split(".")[0],
@@ -276,6 +358,7 @@ const run = async (
   }
   const rows = await table.getJoinedRows({
     where,
+    aggregations,
     joinFields,
   });
 
@@ -304,7 +387,7 @@ const run = async (
         !eval_expression(anno.display_if, row, extraArgs.req.user)
       )
         return;
-      switch (anno.anno_type) {
+      switch (anno.type) {
         case "Icon":
           if (!node.icons) node.icons = [];
           node.icons.push(anno.icon);
@@ -319,7 +402,32 @@ const run = async (
             eval_expression(anno.formula, row, extraArgs.req.user)
           );
           break;
-
+        case "Aggregation":
+          let table, fld, through;
+          const column = anno;
+          if (column.agg_relation.includes("->")) {
+            let restpath;
+            [through, restpath] = column.agg_relation.split("->");
+            [table, fld] = restpath.split(".");
+          } else {
+            [table, fld] = column.agg_relation.split(".");
+          }
+          const targetNm =
+            column.targetNm ||
+            (
+              column.stat.replace(" ", "") +
+              "_" +
+              table +
+              "_" +
+              fld +
+              "_" +
+              column.agg_field.split("@")[0] +
+              "_" +
+              db.sqlsanitize(column.aggwhere || "")
+            ).toLowerCase();
+          if (!node.tags) node.tags = [];
+          node.tags.push(row[targetNm]);
+          break;
         default:
           break;
       }
