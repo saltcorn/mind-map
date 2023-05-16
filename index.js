@@ -129,6 +129,22 @@ const configuration_workflow = () =>
                 },
               },
               {
+                name: "view_height",
+                label: "View height",
+                type: "Integer",
+                attributes: { asideNext: true },
+              },
+              {
+                name: "view_height_units",
+                label: "Units",
+                type: "String",
+                fieldview: "radio_group",
+                attributes: {
+                  inline: true,
+                  options: ["px", "%", "vw", "em", "rem"],
+                },
+              },
+              {
                 name: "root_relation_field",
                 label: "Root relation",
                 sublabel:
@@ -142,7 +158,7 @@ const configuration_workflow = () =>
                 name: "field_values_formula",
                 label: "Row values formula",
                 sublabel:
-                  "A formula for field values set when creating a new node. Use <code>parent</code> for parent row. For example <code>{project: parent.project}</code>",
+                  "Optional. A formula for field values set when creating a new node. Use <code>parent</code> for parent row. For example <code>{project: parent.project}</code>",
                 type: "String",
                 fieldview: "textarea",
               },
@@ -178,6 +194,8 @@ const run = async (
     edit_view,
     direction,
     root_relation_field,
+    view_height,
+    view_height_units,
   },
   state,
   extraArgs
@@ -250,7 +268,9 @@ const run = async (
     div({ id: "mindmap" }),
     style(`
   #mindmap {
-    height: 500px;
+    height: ${
+      view_height ? `${view_height}${view_height_units || "px"}` : "500px"
+    };
     width: 100%;
   }`),
     script(
