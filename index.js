@@ -109,7 +109,15 @@ const configuration_workflow = () =>
               },
               {
                 name: "color_field",
-                label: "Color field",
+                label: "Background color field",
+                type: "String",
+                attributes: {
+                  options: colour_options,
+                },
+              },
+              {
+                name: "text_color_field",
+                label: "Text color field",
                 type: "String",
                 attributes: {
                   options: colour_options,
@@ -330,6 +338,7 @@ const run = async (
     title_field,
     parent_field,
     color_field,
+    text_color_field,
     edit_view,
     direction,
     root_relation_field,
@@ -356,6 +365,12 @@ const run = async (
       target: color_field.split(".")[1],
     };
   }
+  if (text_color_field && text_color_field.includes(".")) {
+    joinFields[`_textcolor`] = {
+      ref: text_color_field.split(".")[0],
+      target: text_color_field.split(".")[1],
+    };
+  }
   const rows = await table.getJoinedRows({
     where,
     aggregations,
@@ -375,6 +390,11 @@ const run = async (
       if (color_field.includes(".")) {
         node.style = { background: row._color };
       } else node.style = { background: row[color_field] };
+    }
+    if (text_color_field) {
+      if (text_color_field.includes(".")) {
+        node.style = { color: row._textcolor };
+      } else node.style = { color: row[text_color_field] };
     }
     if (edit_view) {
       node.hyperLink = `javascript:ajax_modal('/view/${edit_view}?${
