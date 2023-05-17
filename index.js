@@ -490,6 +490,7 @@ const run = async (
     const sc_mindmap_init_jq = () => {      
       $("#mindmap a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-edit"></i>');
       $("li#cm-add_parent").hide()
+      $(".mind-elixir-toolbar.lt").css("width", "unset")
     }
 
     let mind = new MindElixir(options)
