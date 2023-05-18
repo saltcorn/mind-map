@@ -256,6 +256,7 @@ const configuration_workflow = () =>
                         "Text badge",
                         "Formula badge",
                         "Aggregation",
+                        "Label style change",
                       ],
                     },
                   },
@@ -265,6 +266,16 @@ const configuration_workflow = () =>
                     sublabel: "Paste a unicode icon.",
                     type: "String",
                     showIf: { type: "Icon" },
+                  },
+                  {
+                    name: "label_style",
+                    label: "Apply label style",
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      options: ["Italics", "Bold", "Line through"],
+                    },
+                    showIf: { type: "Label style change" },
                   },
                   {
                     name: "text",
@@ -286,7 +297,12 @@ const configuration_workflow = () =>
                     sublabel: "Formula for when to display",
                     type: "String",
                     showIf: {
-                      type: ["Icon", "Text badge", "Formula badge"],
+                      type: [
+                        "Icon",
+                        "Text badge",
+                        "Formula badge",
+                        "Label style change",
+                      ],
                     },
                   },
                   {
@@ -391,13 +407,13 @@ const run = async (
     joinFields,
   });
 
+  const customNodeCss = {};
   const rowToData = (row) => {
-    const childRows = rows.filter(
-      (r) => r[parent_field] === row[table.pk_name]
-    );
+    const id = row[table.pk_name];
+    const childRows = rows.filter((r) => r[parent_field] === id);
     const node = {
       topic: row[title_field],
-      id: row[table.pk_name],
+      id,
       children: childRows.map(rowToData),
     };
     if (color_field) {
@@ -411,9 +427,7 @@ const run = async (
       } else node.style = { color: row[text_color_field] };
     }
     if (edit_view) {
-      node.hyperLink = `javascript:ajax_modal('/view/${edit_view}?${
-        table.pk_name
-      }=${row[table.pk_name]}')`;
+      node.hyperLink = `javascript:ajax_modal('/view/${edit_view}?${table.pk_name}=${id}')`;
     }
     (annotations || []).forEach((anno) => {
       if (
@@ -426,6 +440,21 @@ const run = async (
           if (!node.icons) node.icons = [];
           node.icons.push(anno.icon);
           break;
+        case "Label style change":
+          if (!customNodeCss[id]) customNodeCss[id] = {};
+          switch (anno.label_style) {
+            case "Bold":
+              customNodeCss[id]["font-weight"] = "bold";
+              break;
+            case "Italics":
+              customNodeCss[id]["font-style"] = "italic";
+              break;
+            case "Line through":
+              customNodeCss[id]["text-decoration"] = "line-through";
+              break;
+          }
+          break;
+
         case "Text badge":
           if (!node.tags) node.tags = [];
           node.tags.push(anno.text);
@@ -526,6 +555,9 @@ const run = async (
       $("#mindmap a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-edit"></i>');
       $("li#cm-add_parent").hide()
       $(".mind-elixir-toolbar.lt").css("width", "unset")
+      Object.entries(${JSON.stringify(customNodeCss)}).forEach(([id,v])=>{
+        $('[data-nodeid="me'+id+'"]').css(v)
+      })
     }
 
     let mind = new MindElixir(options)
