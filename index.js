@@ -137,8 +137,21 @@ const configuration_workflow = () =>
                 label: "Initial direction",
                 type: "String",
                 required: true,
+                fieldview: "radio_group",
                 attributes: {
+                  inline: true,
                   options: ["Side", "Left", "Right"],
+                },
+              },
+              {
+                name: "link_style",
+                label: "Link style",
+                type: "String",
+                required: true,
+                fieldview: "radio_group",
+                attributes: {
+                  inline: true,
+                  options: ["Straight", "Curved"],
                 },
               },
               {
@@ -325,7 +338,7 @@ const mostOptions = {
   keypress: true, // default true
   locale: "en", // [zh_CN,zh_TW,en,ja,pt,ru] waiting for PRs
   overflowHidden: false, // default false
-  mainLinkStyle: 2, // [1,2] default 1
+  //mainLinkStyle: 1, // [1,2] default 1
   mainNodeVerticalGap: 15, // default 25
   mainNodeHorizontalGap: 15, // default 65
   allowUndo: false,
@@ -345,6 +358,7 @@ const run = async (
     view_height,
     view_height_units,
     annotations,
+    link_style,
   },
   state,
   extraArgs
@@ -494,6 +508,7 @@ const run = async (
       domReady(`
     let options = {
       ...${JSON.stringify(mostOptions)},
+      mainLinkStyle: ${link_style === "Curved" ? 1 : 2},
       direction: MindElixir.${(direction || "Side").toUpperCase()},    
       contextMenuOption: {
         focus: true,
