@@ -582,6 +582,13 @@ const run = async (
     $("li#cm-unfucus").click(()=>setTimeout(sc_mindmap_init_jq))
     sc_mindmap_init_jq()
     $("#mindmap div.mind-elixir-toolbar.lt span").click(sc_mindmap_init_jq)
+    ${
+      direction === "Right"
+        ? `mind.container.scrollTo(mind.container.scrollLeft+200, mind.container.scrollTop)`
+        : direction === "Left"
+        ? `mind.container.scrollTo(mind.container.scrollLeft-200, mind.container.scrollTop)`
+        : ``
+    }
     `)
     )
   );
