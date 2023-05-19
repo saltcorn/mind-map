@@ -30,6 +30,7 @@ const {
 
 const { features, getState } = require("@saltcorn/data/db/state");
 const db = require("@saltcorn/data/db");
+const { log } = require("console");
 const public_user_role = features?.public_user_role || 10;
 
 const headers = [
@@ -415,16 +416,17 @@ const run = async (
       topic: row[title_field],
       id,
       children: childRows.map(rowToData),
+      style: {},
     };
     if (color_field) {
       if (color_field.includes(".")) {
-        node.style = { background: row._color };
-      } else node.style = { background: row[color_field] };
+        node.style.background = row._color;
+      } else node.style.background = row[color_field];
     }
     if (text_color_field) {
       if (text_color_field.includes(".")) {
-        node.style = { color: row._textcolor };
-      } else node.style = { color: row[text_color_field] };
+        node.style.color = row._textcolor;
+      } else node.style.color = row[text_color_field];
     }
     if (edit_view) {
       node.hyperLink = `javascript:ajax_modal('/view/${edit_view}?${table.pk_name}=${id}')`;
@@ -523,6 +525,7 @@ const run = async (
     nodeData,
     linkData: {},
   };
+  console.log(nodeData.children[0]);
 
   return div(
     div({ id: "mindmap" }),
