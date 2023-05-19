@@ -167,7 +167,7 @@ const configuration_workflow = () =>
                 fieldview: "radio_group",
                 attributes: {
                   inline: true,
-                  options: ["px", "%", "vw", "em", "rem"],
+                  options: ["px", "%", "vh", "em", "rem"],
                 },
               },
               {
@@ -582,11 +582,12 @@ const run = async (
     $("li#cm-unfucus").click(()=>setTimeout(sc_mindmap_init_jq))
     sc_mindmap_init_jq()
     $("#mindmap div.mind-elixir-toolbar.lt span").click(sc_mindmap_init_jq)
+    const conW = mind.container.offsetWidth;
     ${
       direction === "Right"
-        ? `mind.container.scrollTo(mind.container.scrollLeft+200, mind.container.scrollTop)`
+        ? `mind.container.scrollTo(mind.container.scrollLeft+conW*0.4, mind.container.scrollTop)`
         : direction === "Left"
-        ? `mind.container.scrollTo(mind.container.scrollLeft-200, mind.container.scrollTop)`
+        ? `mind.container.scrollTo(mind.container.scrollLeft-conW*0.4, mind.container.scrollTop)`
         : ``
     }
     `)
