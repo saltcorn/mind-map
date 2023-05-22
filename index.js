@@ -184,6 +184,7 @@ const configuration_workflow = () =>
               {
                 name: "field_values_formula",
                 label: "Row values formula",
+                class: "validate-expression",
                 sublabel:
                   "Optional. A formula for field values set when creating a new node. Use <code>parent</code> for parent row. For example <code>{project: parent.project}</code>",
                 type: "String",
@@ -295,6 +296,7 @@ const configuration_workflow = () =>
                   {
                     name: "display_if",
                     label: "Show if",
+                    class: "validate-expression",
                     sublabel: "Formula for when to display",
                     type: "String",
                     showIf: {
