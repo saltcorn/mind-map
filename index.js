@@ -81,6 +81,9 @@ const configuration_workflow = () =>
               viewrow.name !== context.viewname
           );
           const edit_view_opts = edit_views.map((v) => v.name);
+          const order_options = fields.filter((f) =>
+            ["Integer", "Float"].includes(f.type?.name)
+          );
           const root_rel_options = fields
             .filter((f) => f.reftable_name && f.reftable_name !== table.name)
             .map((f) => f.name);
@@ -123,6 +126,14 @@ const configuration_workflow = () =>
                 type: "String",
                 attributes: {
                   options: colour_options,
+                },
+              },
+              {
+                name: "order_field",
+                label: "Order field",
+                type: "String",
+                attributes: {
+                  options: order_options,
                 },
               },
               {
@@ -379,6 +390,7 @@ const run = async (
     view_height_units,
     annotations,
     link_style,
+    order_field,
   },
   state,
   extraArgs
@@ -409,6 +421,7 @@ const run = async (
     where,
     aggregations,
     joinFields,
+    orderBy: order_field || undefined,
   });
 
   const customNodeCss = {};
