@@ -82,7 +82,7 @@ const configuration_workflow = () =>
           );
           const edit_view_opts = edit_views.map((v) => v.name);
           const order_options = fields.filter((f) =>
-            ["Integer", "Float"].includes(f.type?.name)
+            ["Integer", "Float", "Date", "String"].includes(f.type?.name)
           );
           const root_rel_options = fields
             .filter((f) => f.reftable_name && f.reftable_name !== table.name)
@@ -417,11 +417,13 @@ const run = async (
       target: text_color_field.split(".")[1],
     };
   }
+  const order_fld = fields.find((f) => f.name === order_field);
   const rows = await table.getJoinedRows({
     where,
     aggregations,
     joinFields,
     orderBy: order_field || undefined,
+    nocase: order_fld?.type?.name === "String" ? true : undefined,
   });
 
   const customNodeCss = {};
