@@ -343,6 +343,13 @@ const configuration_workflow = () =>
                   },
                   ...agg_field_opts,
                   {
+                    name: "leaf_array_agg",
+                    label: "To Leaves?",
+                    sublabel: "Turn array aggregation items into tree leaves",
+                    type: "Bool",
+                    showIf: { type: "Aggregation", stat: "Array_Agg" },
+                  },
+                  {
                     name: "aggwhere",
                     label: "Where",
                     sublabel: "Formula",
@@ -510,7 +517,13 @@ const run = async (
               db.sqlsanitize(column.aggwhere || "")
             ).toLowerCase();
           if (!node.tags) node.tags = [];
-          node.tags.push(row[targetNm]);
+          if (column.stat === "Array_Agg") {
+            const values = row[targetNm];
+            if (Array.isArray(values))
+              values.forEach((v) => {
+                node.children.push({ topic: v, id: v, children: [] });
+              });
+          } else node.tags.push(row[targetNm]);
           break;
         default:
           break;
