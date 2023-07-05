@@ -488,6 +488,7 @@ const run = async (
         case "Aggregation":
           let table, fld, through;
           const column = anno;
+          if (!column.agg_relation) break;
           if (column.agg_relation.includes("->")) {
             let restpath;
             [through, restpath] = column.agg_relation.split("->");
