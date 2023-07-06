@@ -404,6 +404,7 @@ const run = async (
 ) => {
   const table = await Table.findOne({ id: table_id });
   const fields = table.fields;
+  const expand_agg_leaves = !!state._agg_leaf_exp;
   readState(state, fields);
   const where = await stateFieldsToWhere({ fields, state, table });
   const joinFields = {};
@@ -432,6 +433,7 @@ const run = async (
     orderBy: order_field || undefined,
     nocase: order_fld?.type?.name === "String" ? true : undefined,
   });
+  const hasLeaves = (annotations || []).some((a) => a.leaf_array_agg);
 
   const customNodeCss = {};
   const rowToData = (row) => {
@@ -517,13 +519,24 @@ const run = async (
               db.sqlsanitize(column.aggwhere || "")
             ).toLowerCase();
           if (!node.tags) node.tags = [];
-          if (column.stat === "Array_Agg") {
+          if (column.stat === "Array_Agg" && column.leaf_array_agg) {
             const values = row[targetNm];
-            if (Array.isArray(values))
+            if (Array.isArray(values) && expand_agg_leaves)
               values.forEach((v) => {
-                node.children.push({ topic: v, id: v, children: [] });
+                node.children.push({
+                  topic: v,
+                  id: v,
+                  children: [],
+                });
               });
-          } else node.tags.push(row[targetNm]);
+          } else
+            node.tags.push(
+              row[targetNm] === null
+                ? ""
+                : Array.isArray(row[targetNm])
+                ? row[targetNm].join(", ")
+                : row[targetNm]
+            );
           break;
         default:
           break;
@@ -590,6 +603,18 @@ const run = async (
       $("#mindmap a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-edit"></i>');
       $("li#cm-add_parent").hide()
       $(".mind-elixir-toolbar.lt").css("width", "unset")
+      if(${!!hasLeaves} && !$(".toolbarleaf").length){
+        $(".mind-elixir-toolbar.lt").append('<span class="toolbarleaf"><i class="fas fa-leaf" ${
+          !expand_agg_leaves ? 'style="color: grey"' : ""
+        }></i></span>')
+        $(".toolbarleaf").on("click", function(){
+          ${
+            expand_agg_leaves
+              ? 'unset_state_field("_agg_leaf_exp")'
+              : 'set_state_field("_agg_leaf_exp", true)'
+          }
+        })
+      }
       Object.entries(${JSON.stringify(customNodeCss)}).forEach(([id,v])=>{
         $('[data-nodeid="me'+id+'"]').css(v)
       })
