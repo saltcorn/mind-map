@@ -30,7 +30,6 @@ const {
 
 const { features, getState } = require("@saltcorn/data/db/state");
 const db = require("@saltcorn/data/db");
-const { log } = require("console");
 const public_user_role = features?.public_user_role || 10;
 
 const headers = [
@@ -426,6 +425,23 @@ const run = async (
     };
   }
   const order_fld = fields.find((f) => f.name === order_field);
+
+  if (state[table.pk_name]) {
+    //https://dba.stackexchange.com/questions/175868/cte-get-all-parents-and-all-children-in-one-statement
+    const schema = db.getTenantSchemaPrefix();
+    const pknm = db.sqlsanitize(table.pk_name);
+    const idres = await db.query(
+      `WITH RECURSIVE rec_d (${pknm}) as (
+    SELECT t.${pknm} FROM ${schema}"${table.name}" t WHERE ${pknm} = $1
+    UNION ALL
+    SELECT t.${pknm} FROM rec_d, ${schema}"${
+        table.name
+      }" t where t.${db.sqlsanitize(parent_field)} = rec_d.${pknm}
+      ) SELECT ${pknm} FROM rec_d`,
+      [state[table.pk_name]]
+    );
+    where.id = { in: idres.rows.map((r) => r[pknm]) };
+  }
   const rows = await table.getJoinedRows({
     where,
     aggregations,
