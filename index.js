@@ -213,6 +213,12 @@ const configuration_workflow = () =>
                 label: "Vertical",
                 type: "Integer",
               },
+              {
+                name: "expander_visible",
+                label: "Expander always visible",
+                type: "Bool",
+                sublabel: "Uncheck this to only show when hovering",
+              },
             ],
           });
         },
@@ -409,6 +415,7 @@ const run = async (
     order_field,
     node_gap_h,
     node_gap_v,
+    expander_visible,
   },
   state,
   extraArgs
@@ -608,6 +615,13 @@ const run = async (
       view_height ? `${view_height}${view_height_units || "px"}` : "500px"
     };
     width: 100%;
+  }
+  ${
+    expander_visible
+      ? `.map-container me-parent me-epd.minus {
+    opacity: 0.8;
+  }`
+      : ""
   }`),
     script(
       domReady(`
