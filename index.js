@@ -201,6 +201,18 @@ const configuration_workflow = () =>
                 type: "String",
                 fieldview: "textarea",
               },
+              {
+                name: "node_gap_h",
+                label: "Horizontal",
+                sublabel: "Main node gap",
+                type: "Integer",
+                attributes: { asideNext: true },
+              },
+              {
+                name: "node_gap_v",
+                label: "Vertical",
+                type: "Integer",
+              },
             ],
           });
         },
@@ -376,8 +388,6 @@ const mostOptions = {
   locale: "en", // [zh_CN,zh_TW,en,ja,pt,ru] waiting for PRs
   overflowHidden: false, // default false
   //mainLinkStyle: 1, // [1,2] default 1
-  mainNodeVerticalGap: 15, // default 25
-  mainNodeHorizontalGap: 15, // default 65
   allowUndo: false,
 };
 
@@ -397,6 +407,8 @@ const run = async (
     annotations,
     link_style,
     order_field,
+    node_gap_h,
+    node_gap_v,
   },
   state,
   extraArgs
@@ -601,6 +613,8 @@ const run = async (
       domReady(`
     let options = {
       ...${JSON.stringify(mostOptions)},
+      mainNodeVerticalGap: ${node_gap_v || 15}, // default 25
+      mainNodeHorizontalGap: ${node_gap_h || 15}, // default 65
       mainLinkStyle: ${link_style === "Curved" ? 1 : 2},
       direction: MindElixir.${(direction || "Side").toUpperCase()},    
       contextMenuOption: {
