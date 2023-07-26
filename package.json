@@ -1,6 +1,6 @@
 {
   "name": "@saltcorn/mind-map",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Mind map view for Saltcorn",
   "main": "index.js",
   "dependencies": {
