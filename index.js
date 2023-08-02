@@ -680,11 +680,13 @@ const run = async (
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
     mind.bus.addListener('operation', operation => {
-      console.log(operation)
+      //console.log(operation)
       if(operation.name=="moveNode") 
         view_post('${viewname}', 'change_node', {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.id});      
-      if(operation.name=="moveNodeBefore")  
-        view_post('${viewname}', 'change_node', {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.parent.id});      
+      if(operation.name=="moveNodeBefore")  {
+        const data = {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.parent.id}
+        view_post('${viewname}', 'change_node', data);      
+      }
       if(operation.name=="removeNode") 
         view_post('${viewname}', 'delete_node', {id: operation.obj.id});
       if(operation.name=="finishEdit") {
@@ -731,7 +733,8 @@ const change_node = async (
   }
   const updRow = {};
   if (topic) updRow[title_field] = topic;
-  if (parent_id) updRow[parent_field] = parent_id;
+  if (parent_id === "root") updRow[parent_field] = null;
+  else if (parent_id) updRow[parent_field] = parent_id;
   await table.updateRow(updRow, id, req.user || { role_id: public_user_role });
   return { json: { success: "ok" } };
 };
