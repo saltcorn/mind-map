@@ -444,22 +444,31 @@ const run = async (
     };
   }
   const order_fld = fields.find((f) => f.name === order_field);
-
-  if (state[table.pk_name]) {
+  const unique_field = fields.find(
+    (f) => (f.is_unique || f.primary_key) && state[f.name]
+  );
+  if (unique_field) {
     //https://dba.stackexchange.com/questions/175868/cte-get-all-parents-and-all-children-in-one-statement
     const schema = db.getTenantSchemaPrefix();
-    const pknm = db.sqlsanitize(table.pk_name);
-    const idres = await db.query(
-      `WITH RECURSIVE rec_d (${pknm}) as (
-    SELECT t.${pknm} FROM ${schema}"${table.name}" t WHERE ${pknm} = $1
+    const ufname = db.sqlsanitize(unique_field.name);
+    const pkname = db.sqlsanitize(table.pk_name);
+    const ispk = ufname === pkname;
+    const q = `WITH RECURSIVE rec_d (${ufname}) as (
+    SELECT t.${ufname}${ispk ? "" : `, t.${pkname}`} FROM ${schema}"${
+      table.name
+    }" t WHERE ${ufname} = $1
     UNION ALL
-    SELECT t.${pknm} FROM rec_d, ${schema}"${
-        table.name
-      }" t where t.${db.sqlsanitize(parent_field)} = rec_d.${pknm}
-      ) SELECT ${pknm} FROM rec_d`,
-      [state[table.pk_name]]
+    SELECT t.${ufname}${ispk ? "" : `, t.${pkname}`} FROM rec_d, ${schema}"${
+      table.name
+    }" t where t.${db.sqlsanitize(parent_field)} = rec_d.${pkname}
+      ) SELECT ${ufname} FROM rec_d`;
+    console.log(q, state[unique_field.name]);
+    const idres = await db.query(
+      q,
+
+      [state[unique_field.name]]
     );
-    where.id = { in: idres.rows.map((r) => r[pknm]) };
+    where[unique_field.name] = { in: idres.rows.map((r) => r[ufname]) };
   }
   const rows = await table.getJoinedRows({
     where,
