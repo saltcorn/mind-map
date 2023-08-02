@@ -462,7 +462,6 @@ const run = async (
       table.name
     }" t where t.${db.sqlsanitize(parent_field)} = rec_d.${pkname}
       ) SELECT ${ufname} FROM rec_d`;
-    console.log(q, state[unique_field.name]);
     const idres = await db.query(
       q,
 
@@ -606,7 +605,9 @@ const run = async (
       state[root_relation_field]
     )}`;
   } else {
-    const root = rows.find((r) => !r[parent_field]);
+    const root = unique_field
+      ? rows.find((r) => r[unique_field.name] == state[unique_field.name])
+      : rows.find((r) => !r[parent_field]);
     nodeData = rowToData(root);
   }
 
