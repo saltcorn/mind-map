@@ -672,6 +672,9 @@ const run = async (
       Object.entries(${JSON.stringify(customNodeCss)}).forEach(([id,v])=>{
         $('[data-nodeid="me'+id+'"]').css(v)
       })
+      $("li#cm-fucus").click(()=>setTimeout(sc_mindmap_init_jq))
+      $("me-epd").click(()=>setTimeout(sc_mindmap_init_jq))
+      $("li#cm-unfucus").click(()=>setTimeout(sc_mindmap_init_jq))
     }
 
     let mind = new MindElixir(options)
@@ -692,8 +695,7 @@ const run = async (
           view_post('${viewname}', 'change_node', {id: operation.obj.id, topic: operation.obj.topic});
       }
     })
-    $("li#cm-fucus").click(()=>setTimeout(sc_mindmap_init_jq))
-    $("li#cm-unfucus").click(()=>setTimeout(sc_mindmap_init_jq))
+   
     sc_mindmap_init_jq()
     $("#mindmap div.mind-elixir-toolbar.lt span").click(sc_mindmap_init_jq)
     const conW = mind.container.offsetWidth;
