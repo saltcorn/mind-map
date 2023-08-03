@@ -680,10 +680,10 @@ const run = async (
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
     mind.bus.addListener('operation', operation => {
-      //console.log(operation)
+      console.log(operation)
       if(operation.name=="moveNode") 
         view_post('${viewname}', 'change_node', {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.id});      
-      if(operation.name=="moveNodeBefore")  {
+      if(operation.name=="moveNodeBefore" || operation.name=="moveNodeAfter" )  {
         const data = {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.parent.id}
         view_post('${viewname}', 'change_node', data);      
       }
