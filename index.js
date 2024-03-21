@@ -520,7 +520,9 @@ const run = async (
       child_link_labels[cr.id] = cr[child_label_field];
     });
   }
-  const hasLeaves = (annotations || []).some((a) => a.leaf_array_agg);
+  const hasLeaves = (annotations || []).some(
+    (a) => a.leaf_array_agg || a.type === "Child links"
+  );
 
   const customNodeCss = {};
   const rowToData = (row) => {
