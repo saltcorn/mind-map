@@ -266,7 +266,7 @@ const configuration_workflow = () =>
                 },
                 showIf: {
                   agg_relation: aggKey,
-                  type: "Aggregation",
+                  type: ["Aggregation", "Child links"],
                 },
               };
             }
@@ -287,6 +287,7 @@ const configuration_workflow = () =>
                         "Text badge",
                         "Formula badge",
                         "Aggregation",
+                        "Child links",
                         "Label style change",
                       ],
                     },
@@ -345,7 +346,17 @@ const configuration_workflow = () =>
                     attributes: {
                       options: child_field_list,
                     },
-                    showIf: { type: "Aggregation" },
+                    showIf: { type: ["Aggregation", "Child links"] },
+                  },
+                  {
+                    name: "child_link_view",
+                    label: "Link to view",
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      //options: child_field_list,
+                    },
+                    showIf: { type: "Child links" },
                   },
                   {
                     name: "stat",
@@ -469,6 +480,24 @@ const run = async (
     );
     where[unique_field.name] = { in: idres.rows.map((r) => r[ufname]) };
   }
+  const child_link_col = annotations.find((c) => c.type === "Child links");
+  const child_link_labels = {};
+  if (child_link_col) {
+    // add the aggregation to id as well
+    // aggregations.child_node_id = {
+    //   ref:
+    // }
+    const [table, ref] = child_link_col.agg_relation.split(".");
+    aggregations._child_link_id = {
+      table,
+      ref,
+      where: undefined,
+      field: "id",
+      aggregate: "Array_Agg",
+      through: undefined,
+    };
+  }
+
   const rows = await table.getJoinedRows({
     where,
     aggregations,
@@ -476,6 +505,21 @@ const run = async (
     orderBy: order_field || undefined,
     nocase: order_fld?.type?.name === "String" ? true : undefined,
   });
+  if (child_link_col) {
+    const [ctable, ref] = child_link_col.agg_relation.split(".");
+    const child_ids = [];
+    rows.forEach((r) => {
+      child_ids.push(...(r._child_link_id || []));
+    });
+    const child_label_field = child_link_col.agg_field.split("@")[0];
+    const ctableRows = await Table.findOne(ctable).getRows({
+      id: { in: child_ids },
+    });
+
+    ctableRows.forEach((cr) => {
+      child_link_labels[cr.id] = cr[child_label_field];
+    });
+  }
   const hasLeaves = (annotations || []).some((a) => a.leaf_array_agg);
 
   const customNodeCss = {};
@@ -581,6 +625,33 @@ const run = async (
                 : row[targetNm]
             );
           break;
+        case "Child links":
+          {
+            const targetNm = "_child_link_id";
+
+            if (!node.tags) node.tags = [];
+            // if (column.leaf_array_agg) {
+            const values = row[targetNm];
+            if (Array.isArray(values) && expand_agg_leaves)
+              values.forEach((v) => {
+                node.children.push({
+                  topic: child_link_labels[v],
+                  hyperLink: `/view/${anno.child_link_view}?id=${v}`,
+                  id: v,
+                  children: [],
+                });
+              });
+            /*} else
+              node.tags.push(
+                row[targetNm] === null
+                  ? ""
+                  : Array.isArray(row[targetNm])
+                  ? row[targetNm].join(", ")
+                  : row[targetNm]
+              );*/
+          }
+          break;
+
         default:
           break;
       }
