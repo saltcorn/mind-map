@@ -359,6 +359,16 @@ const configuration_workflow = () =>
                     showIf: { type: "Child links" },
                   },
                   {
+                    name: "child_link_type",
+                    label: "Link type",
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      options: ["Link", "New Tab", "Popup"],
+                    },
+                    showIf: { type: "Child links" },
+                  },
+                  {
                     name: "stat",
                     label: "Statistic",
                     type: "String",
@@ -636,9 +646,13 @@ const run = async (
             const values = row[targetNm];
             if (Array.isArray(values) && expand_agg_leaves)
               values.forEach((v) => {
+                const url = `/view/${anno.child_link_view}?id=${v}`;
                 node.children.push({
                   topic: child_link_labels[v],
-                  hyperLink: `/view/${anno.child_link_view}?id=${v}`,
+                  hyperLink:
+                    anno.child_link_type === "Popup"
+                      ? `javascript:ajax_modal('${url}')`
+                      : url,
                   id: v,
                   children: [],
                 });
