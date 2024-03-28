@@ -655,6 +655,10 @@ const run = async (
                       : url,
                   id: v,
                   children: [],
+                  style:
+                    anno.child_link_type === "New Tab"
+                      ? { fontWeight: 399 }
+                      : {},
                 });
               });
             /*} else
@@ -742,6 +746,7 @@ const run = async (
     }
     const sc_mindmap_init_jq = () => {      
       $("#mindmap a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-edit"></i>');
+      $('#mindmap [style="font-weight: 399;"] a.hyper-link').attr("target","_blank");
       $("li#cm-add_parent").hide()
       $(".mind-elixir-toolbar.lt").css("width", "unset")
       if(${!!hasLeaves} && !$(".toolbarleaf").length){
