@@ -219,6 +219,12 @@ const configuration_workflow = () =>
                 type: "Bool",
                 sublabel: "Uncheck this to only show when hovering",
               },
+              {
+                name: "newline_tags",
+                label: "Newline tags",
+                type: "Bool",
+                sublabel: "Each tag in a node on its own line",
+              },
             ],
           });
         },
@@ -437,6 +443,7 @@ const run = async (
     node_gap_h,
     node_gap_v,
     expander_visible,
+    newline_tags,
   },
   state,
   extraArgs
@@ -490,7 +497,9 @@ const run = async (
     );
     where[unique_field.name] = { in: idres.rows.map((r) => r[ufname]) };
   }
-  const child_link_col = (annotations||[]).find((c) => c.type === "Child links");
+  const child_link_col = (annotations || []).find(
+    (c) => c.type === "Child links"
+  );
   const child_link_labels = {};
   if (child_link_col) {
     // add the aggregation to id as well
@@ -716,6 +725,14 @@ const run = async (
       view_height ? `${view_height}${view_height_units || "px"}` : "500px"
     };
     width: 100%;
+  }
+  ${
+    newline_tags
+      ? `#mindmap .tags span {
+    display: block;
+  }
+  `
+      : ""
   }
   ${
     expander_visible
