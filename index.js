@@ -219,12 +219,6 @@ const configuration_workflow = () =>
                 type: "Bool",
                 sublabel: "Uncheck this to only show when hovering",
               },
-              {
-                name: "newline_tags",
-                label: "Newline tags",
-                type: "Bool",
-                sublabel: "Each tag in a node on its own line",
-              },
             ],
           });
         },
@@ -279,6 +273,32 @@ const configuration_workflow = () =>
           );
           return new Form({
             fields: [
+              {
+                name: "newline_tags",
+                label: "Newline tags",
+                type: "Bool",
+                sublabel: "Each tag in a node on its own line",
+              },
+              {
+                name: "set_tag_color",
+                label: "Set tag colors",
+                type: "Bool",
+              },
+              {
+                name: "tag_text_color",
+                label: "Text color",
+                type: "Color",
+                attributes: { asideNext: true },
+                showIf: { set_tag_color: true },
+              },
+              {
+                name: "tag_bg_color",
+                label: "Background color",
+                type: "Color",
+                showIf: { set_tag_color: true },
+                attributes: { asideNext: true },
+              },
+
               new FieldRepeat({
                 name: "annotations",
                 fields: [
@@ -444,6 +464,9 @@ const run = async (
     node_gap_v,
     expander_visible,
     newline_tags,
+    set_tag_color,
+    tag_text_color,
+    tag_bg_color,
   },
   state,
   extraArgs
@@ -730,6 +753,15 @@ const run = async (
     newline_tags
       ? `#mindmap .tags span {
     display: block;
+  }
+  `
+      : ""
+  }
+  ${
+    set_tag_color
+      ? `#mindmap .tags span {
+    color: ${tag_text_color};
+    background-color: ${tag_bg_color};
   }
   `
       : ""
