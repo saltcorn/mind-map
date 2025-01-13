@@ -324,13 +324,6 @@ const configuration_workflow = () =>
                     showIf: { type: "Formula badge" },
                   },
                   {
-                    name: "newline",
-                    label: "Newline",
-                    sublabel: "Follow by newline",
-                    type: "Bool",
-                    showIf: { type: ["Formula badge", "Text badge"] },
-                  },
-                  {
                     name: "display_if",
                     label: "Show if",
                     class: "validate-expression",
@@ -497,9 +490,7 @@ const run = async (
     );
     where[unique_field.name] = { in: idres.rows.map((r) => r[ufname]) };
   }
-  const child_link_col = (annotations || []).find(
-    (c) => c.type === "Child links"
-  );
+  const child_link_col = (annotations||[]).find((c) => c.type === "Child links");
   const child_link_labels = {};
   if (child_link_col) {
     // add the aggregation to id as well
@@ -595,14 +586,12 @@ const run = async (
         case "Text badge":
           if (!node.tags) node.tags = [];
           node.tags.push(anno.text);
-          if (anno.newline) node.tags.push("_n_");
           break;
         case "Formula badge":
           if (!node.tags) node.tags = [];
           node.tags.push(
             eval_expression(anno.formula, row, extraArgs.req.user)
           );
-          if (anno.newline) node.tags.push("_n_");
           break;
         case "Aggregation":
           let table, fld, through;
@@ -727,16 +716,7 @@ const run = async (
       view_height ? `${view_height}${view_height_units || "px"}` : "500px"
     };
     width: 100%;
-  } 
-  #mindmap .tags span.newline {
-    display: block;
-    width: 0px;
-    height: 0px;
-    padding: 0px;
-    margin: 0px;
-    overflow: hidden;
-  } 
-
+  }
   ${
     expander_visible
       ? `.map-container me-parent me-epd.minus {
@@ -787,7 +767,6 @@ const run = async (
       $("li#cm-fucus").click(()=>setTimeout(sc_mindmap_init_jq))
       $("me-epd").click(()=>setTimeout(sc_mindmap_init_jq))
       $("li#cm-unfucus").click(()=>setTimeout(sc_mindmap_init_jq))
-      $('#mindmap .tags span:contains("_n_")').addClass("newline");
     }
 
     let mind = new MindElixir(options)
