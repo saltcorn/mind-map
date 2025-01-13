@@ -490,7 +490,7 @@ const run = async (
     );
     where[unique_field.name] = { in: idres.rows.map((r) => r[ufname]) };
   }
-  const child_link_col = annotations.find((c) => c.type === "Child links");
+  const child_link_col = (annotations||[]).find((c) => c.type === "Child links");
   const child_link_labels = {};
   if (child_link_col) {
     // add the aggregation to id as well
