@@ -428,6 +428,32 @@ const configuration_workflow = () =>
           });
         },
       },
+      {
+        name: "Color theme",
+        form: async (context) => {
+          return new Form({
+            blurb: "Palette colors will be cycled through for link colors",
+            fields: [
+              {
+                name: "set_palette",
+                label: "Set palette",
+                type: "Bool",
+              },
+              new FieldRepeat({
+                name: "palette",
+                showIf: { set_palette: true },
+                fields: [
+                  {
+                    name: "color",
+                    label: "Color",
+                    type: "Color",
+                  },
+                ],
+              }),
+            ],
+          });
+        },
+      },
     ],
   });
 
@@ -467,6 +493,8 @@ const run = async (
     set_tag_color,
     tag_text_color,
     tag_bg_color,
+    set_palette,
+    palette,
   },
   state,
   extraArgs
@@ -565,7 +593,15 @@ const run = async (
   const hasLeaves = (annotations || []).some(
     (a) => a.leaf_array_agg || a.type === "Child links"
   );
-
+  let themeOptions = {};
+  if (set_palette) {
+    themeOptions.theme = {
+      name: "customTheme",
+      palette: palette.map((p) => p.color),
+      cssVar: {}
+    };
+  }
+  
   const customNodeCss = {};
   const rowToData = (row) => {
     const id = row[table.pk_name];
@@ -777,6 +813,7 @@ const run = async (
       domReady(`
     let options = {
       ...${JSON.stringify(mostOptions)},
+      ...${JSON.stringify(themeOptions)},
       mainNodeVerticalGap: ${node_gap_v || 15}, // default 25
       mainNodeHorizontalGap: ${node_gap_h || 15}, // default 65
       mainLinkStyle: ${link_style === "Curved" ? 1 : 2},
@@ -821,7 +858,6 @@ const run = async (
     let mind = new MindElixir(options)
     mind.init(${JSON.stringify(mindData)})
     mind.bus.addListener('operation', operation => {
-      console.log(operation)
       if(operation.name=="moveNode") 
         view_post('${viewname}', 'change_node', {id: operation.obj.fromObj.id, parent_id: operation.obj.toObj.id});      
       if(operation.name=="moveNodeBefore" || operation.name=="moveNodeAfter" )  {
