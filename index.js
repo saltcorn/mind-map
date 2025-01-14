@@ -755,7 +755,10 @@ const run = async (
             anno.link_type === "Popup"
               ? `javascript:ajax_modal('${linkUrl}')`
               : linkUrl;
-          node.style = anno.link_type === "New Tab" ? { fontWeight: 399 } : {};
+          if (anno.link_type === "New Tab") {
+            if (!node.style) node.style = {};
+            node.style.fontWeight = 399;
+          }
           break;
         case "Child links":
           {
