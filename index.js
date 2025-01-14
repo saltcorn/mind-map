@@ -313,6 +313,17 @@ const configuration_workflow = () =>
                 showIf: { set_tag_color: true },
                 attributes: { asideNext: true },
               },
+              {
+                name: "link_icon",
+                label: "Link icon",
+                type: "String",
+                required: true,
+                fieldview: "radio_group",
+                attributes: {
+                  inline: true,
+                  options: ["Edit", "Link", "Info"],
+                },
+              },
 
               new FieldRepeat({
                 name: "annotations",
@@ -515,6 +526,7 @@ const run = async (
     palette,
     expanded_max_level,
     read_only,
+    link_icon,
   },
   state,
   extraArgs
@@ -899,7 +911,13 @@ const run = async (
       }
     }
     const sc_mindmap_init_jq = () => {      
-      $("#mindmap${rndid} a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-edit"></i>');
+      $("#mindmap${rndid} a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-${
+        link_icon === "Link"
+          ? "link"
+          : link_icon === "Info"
+          ? "info-circle"
+          : "edit"
+      }"></i>');
       $('#mindmap${rndid} [style="font-weight: 399;"] a.hyper-link').attr("target","_blank");
       $("li#cm-add_parent").hide()
       $(".mind-elixir-toolbar.lt").css("width", "unset")
