@@ -832,11 +832,17 @@ const run = async (
     linkData: {},
   };
 
-  //console.log(nodeData.children[0]);
-
+  const rootBackground = nodeData?.style?.background || undefined;
   return div(
     div({ id: `mindmap${rndid}` }),
     style(`
+      ${
+        rootBackground
+          ? `#mindmap${rndid} .map-container .map-canvas me-root {
+          background-color: ${rootBackground} !important; 
+  }`
+          : ""
+      }
   #mindmap${rndid} {
     height: ${
       view_height ? `${view_height}${view_height_units || "px"}` : "500px"
