@@ -183,6 +183,12 @@ const configuration_workflow = () =>
                 },
               },
               {
+                name: "read_only",
+                label: "Read only",
+                type: "Bool",
+                sublabel: "Disable all editing operations",
+              },
+              {
                 name: "root_relation_field",
                 label: "Root relation",
                 sublabel:
@@ -200,6 +206,7 @@ const configuration_workflow = () =>
                   "Optional. A formula for field values set when creating a new node. Use <code>parent</code> for parent row. For example <code>{project: parent.project}</code>",
                 type: "String",
                 fieldview: "textarea",
+                showIf: { read_only: false },
               },
               {
                 name: "node_gap_h",
@@ -465,19 +472,6 @@ const configuration_workflow = () =>
     ],
   });
 
-const mostOptions = {
-  el: "#mindmap", // or HTMLDivElement
-  draggable: true, // default true
-  contextMenu: true, // default true
-  toolBar: true, // default true
-  nodeMenu: true, // default true
-  keypress: true, // default true
-  locale: "en", // [zh_CN,zh_TW,en,ja,pt,ru] waiting for PRs
-  overflowHidden: false, // default false
-  //mainLinkStyle: 1, // [1,2] default 1
-  allowUndo: false,
-};
-
 const run = async (
   table_id,
   viewname,
@@ -504,6 +498,7 @@ const run = async (
     set_palette,
     palette,
     expanded_max_level,
+    read_only,
   },
   state,
   extraArgs
@@ -610,6 +605,19 @@ const run = async (
       cssVar: {},
     };
   }
+  const mostOptions = {
+    el: "#mindmap", // or HTMLDivElement
+    draggable: !read_only, // default true
+    contextMenu: !read_only, // default true
+    editable: !read_only,
+    toolBar: true, // default true
+    nodeMenu: !read_only, // default true
+    keypress: true, // default true
+    locale: extraArgs?.req.getLocale?.() || "en", // [zh_CN,zh_TW,en,ja,pt,ru] waiting for PRs
+    overflowHidden: false, // default false
+    //mainLinkStyle: 1, // [1,2] default 1
+    allowUndo: !read_only,
+  };
 
   const customNodeCss = {};
   const rowToData = (row, level = 0) => {
@@ -911,10 +919,11 @@ const run = async (
 const change_node = async (
   table_id,
   viewname,
-  { title_field, parent_field },
+  { title_field, parent_field, read_only },
   { id, topic, parent_id },
   { req }
 ) => {
+  if (read_only) return { json: { error: "Read only mode" } };
   const table = await Table.findOne({ id: table_id });
 
   const role = req.isAuthenticated() ? req.user.role_id : public_user_role;
@@ -935,10 +944,12 @@ const change_node = async (
 const delete_node = async (
   table_id,
   viewname,
-  { title_field },
+  { title_field, read_only },
   { id },
   { req }
 ) => {
+  if (read_only) return { json: { error: "Read only mode" } };
+
   const table = await Table.findOne({ id: table_id });
 
   const role = req.isAuthenticated() ? req.user.role_id : public_user_role;
@@ -964,10 +975,13 @@ const add_node = async (
     edit_view,
     root_relation_field,
     field_values_formula,
+    read_only,
   },
   { topic, parent_id, root_value },
   { req }
 ) => {
+  if (read_only) return { json: { error: "Read only mode" } };
+
   const table = await Table.findOne({ id: table_id });
 
   const role = req.isAuthenticated() ? req.user.role_id : public_user_role;
