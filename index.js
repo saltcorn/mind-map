@@ -219,6 +219,14 @@ const configuration_workflow = () =>
                 type: "Bool",
                 sublabel: "Uncheck this to only show when hovering",
               },
+              {
+                name: "expanded_max_level",
+                label: "Expanded to level",
+                type: "Integer",
+                attributes: { min: 0 },
+                sublabel:
+                  "If set, on initial load, only nodes with this degree of separation from root will be expanded. Example: 1 to only show one level",
+              },
             ],
           });
         },
@@ -495,6 +503,7 @@ const run = async (
     tag_bg_color,
     set_palette,
     palette,
+    expanded_max_level,
   },
   state,
   extraArgs
@@ -598,20 +607,25 @@ const run = async (
     themeOptions.theme = {
       name: "customTheme",
       palette: palette.map((p) => p.color),
-      cssVar: {}
+      cssVar: {},
     };
   }
-  
+
   const customNodeCss = {};
-  const rowToData = (row) => {
+  const rowToData = (row, level = 0) => {
     const id = row[table.pk_name];
     const childRows = rows.filter((r) => r[parent_field] === id);
     const node = {
       topic: row[title_field],
       id,
-      children: childRows.map(rowToData),
+      children: childRows.map((r) => rowToData(r, level + 1)),
       style: {},
     };
+    if (
+      typeof expanded_max_level === "number" &&
+      level > expanded_max_level - 1
+    )
+      node.expanded = false;
     if (color_field) {
       if (color_field.includes(".")) {
         node.style.background = row._color;
@@ -757,7 +771,9 @@ const run = async (
     nodeData = {
       id: "root",
       topic: rootRow[rootField.attributes.summary_field],
-      children: rows.filter((r) => !r[parent_field]).map(rowToData),
+      children: rows
+        .filter((r) => !r[parent_field])
+        .map((r) => rowToData(r, 1)),
     };
 
     setRootForNewNodes = `root_value:${JSON.stringify(
