@@ -840,6 +840,10 @@ const run = async (
     };
     width: 100%;
   }
+  #mindmap${rndid} .tags span {
+    font-size: 12px;
+  }
+  
   ${
     newline_tags
       ? `#mindmap${rndid} .tags span {
