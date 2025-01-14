@@ -329,6 +329,7 @@ const configuration_workflow = () =>
                         "Formula badge",
                         "Aggregation",
                         "Child links",
+                        "Link",
                         "Label style change",
                       ],
                     },
@@ -363,6 +364,21 @@ const configuration_workflow = () =>
                     sublabel: "Formula for text to show in badge",
                     type: "String",
                     showIf: { type: "Formula badge" },
+                  },
+                  {
+                    name: "url_formula",
+                    label: "URL formula",
+                    sublabel: "Formula for URL",
+                    type: "String",
+                    showIf: { type: "Link" },
+                  },
+                  {
+                    name: "link_type",
+                    label: "Link",
+                    type: "String",
+                    required: true,
+                    showIf: { type: "Link" },
+                    attributes: { options: ["Link", "New Tab", "Popup"] },
                   },
                   {
                     name: "display_if",
@@ -728,6 +744,18 @@ const run = async (
                 ? row[targetNm].join(", ")
                 : row[targetNm]
             );
+          break;
+        case "Link":
+          const linkUrl = eval_expression(
+            anno.url_formula,
+            row,
+            extraArgs.req.user
+          );
+          node.hyperLink =
+            anno.link_type === "Popup"
+              ? `javascript:ajax_modal('${linkUrl}')`
+              : linkUrl;
+          node.style = anno.link_type === "New Tab" ? { fontWeight: 399 } : {};
           break;
         case "Child links":
           {
