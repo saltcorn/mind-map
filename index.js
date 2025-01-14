@@ -605,8 +605,10 @@ const run = async (
       cssVar: {},
     };
   }
+  const rndid = Math.floor(Math.random() * 16777215).toString(16);
+
   const mostOptions = {
-    el: "#mindmap", // or HTMLDivElement
+    el: `#mindmap${rndid}`, // or HTMLDivElement
     draggable: !read_only, // default true
     contextMenu: !read_only, // default true
     editable: !read_only,
@@ -798,12 +800,13 @@ const run = async (
     nodeData,
     linkData: {},
   };
+
   //console.log(nodeData.children[0]);
 
   return div(
-    div({ id: "mindmap" }),
+    div({ id: `mindmap${rndid}` }),
     style(`
-  #mindmap {
+  #mindmap${rndid} {
     height: ${
       view_height ? `${view_height}${view_height_units || "px"}` : "500px"
     };
@@ -811,7 +814,7 @@ const run = async (
   }
   ${
     newline_tags
-      ? `#mindmap .tags span {
+      ? `#mindmap${rndid} .tags span {
     display: block;
   }
   `
@@ -819,7 +822,7 @@ const run = async (
   }
   ${
     set_tag_color
-      ? `#mindmap .tags span {
+      ? `#mindmap${rndid} .tags span {
     color: ${tag_text_color};
     background-color: ${tag_bg_color};
   }
@@ -855,8 +858,8 @@ const run = async (
       }
     }
     const sc_mindmap_init_jq = () => {      
-      $("#mindmap a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-edit"></i>');
-      $('#mindmap [style="font-weight: 399;"] a.hyper-link').attr("target","_blank");
+      $("#mindmap${rndid} a.hyper-link").attr("target","").html('<i class="ms-1 fas fa-edit"></i>');
+      $('#mindmap${rndid} [style="font-weight: 399;"] a.hyper-link').attr("target","_blank");
       $("li#cm-add_parent").hide()
       $(".mind-elixir-toolbar.lt").css("width", "unset")
       if(${!!hasLeaves} && !$(".toolbarleaf").length){
@@ -902,7 +905,7 @@ const run = async (
     })
    
     sc_mindmap_init_jq()
-    $("#mindmap div.mind-elixir-toolbar.lt span").click(sc_mindmap_init_jq)
+    $("#mindmap${rndid} div.mind-elixir-toolbar.lt span").click(sc_mindmap_init_jq)
     const conW = mind.container.offsetWidth;
     ${
       direction === "Right"
