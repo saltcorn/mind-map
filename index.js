@@ -403,6 +403,7 @@ const configuration_workflow = () =>
                         "Text badge",
                         "Formula badge",
                         "Label style change",
+                        "Link",
                       ],
                     },
                   },
