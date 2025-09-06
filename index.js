@@ -37,6 +37,7 @@ const headers = [
     script: `/plugins/public/mind-map@${
       require("./package.json").version
     }/MindElixir.js`,
+    onlyViews: ["Mind map"],
   },
 ];
 
